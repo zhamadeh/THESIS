@@ -16,9 +16,9 @@ library(RANN)
 metrics=read.table("/Users/zeidh//Desktop/THESIS/Metrics/qualitiyMetricsAllLibraries_pe_se.txt",header = T)
 
 
-metrics$quality_manual <- droplevels.factor(metrics$quality_manual)
+metrics$quality_manual <- droplevels(as.factor(metrics$quality_manual))
 metrics %>% group_by(quality_manual)%>% summarize((n()))
-metrics$quality_manual = gsub(x = metrics$quality_manual,pattern = "E",replacement = "P")
+#metrics$quality_manual = gsub(x = metrics$quality_manual,pattern = "E",replacement = "P")
 
 metrics=select(metrics,-c(file,gene,end))
 ################## Data partitioning ##################

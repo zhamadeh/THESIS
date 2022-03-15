@@ -1,0 +1,13 @@
+
+library(breakpointR)
+breakpointr(inputfolder="~/../../projects/lansdorp/porubsky_na12878/",outputfolder="~/na878_porubsky_classifier_bpr/", pairedEndReads=TRUE, numCPU=25,windowsize=175,binMethod="reads",peakTh=0.3875,min.mapq=7.75,trim=6.5,background=0.15)
+
+df_full=data.frame()
+
+for (file in list.files("~/na878_porubsky_classifier_bpr/data/",full.names=T)){
+	tmp=get(load(file))
+	df=data.frame(ID=tmp$ID,background=tmp$lib.metrics[[1]],med.reads.per.MB=tmp$lib.metrics[[2]],perc.coverage=tmp$lib.metrics[[3]])
+	df_full=rbind(df_full,df)
+}
+write.table(df_full,"~/na878_porubsky_classifier_bpr/bpr_metrics.txt",quote=F,row.names=F,col.names=T,sep="\t")
+

@@ -1,4 +1,4 @@
-sces= read.table("SCEs/fucci_sces_complete.bed",header=T)%>%select(c(seqnames,start,end,gene,width))
+sces= read.table("SCEs/sces_complete_minisPhili.txt",header=T)%>%select(c(seqnames,start,end,gene,width))
 sces$gene=gsub(x = sces$gene,pattern = "/",replacement = "_")
 sces$gene=as.factor(sces$gene)
 sces$seqnames=gsub(x = sces$seqnames,pattern = "chr",replacement = "")

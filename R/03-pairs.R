@@ -1,4 +1,4 @@
-pair = read.table("Desktop/THESIS/qualitiyMetricsAllLibraries_pe_se.txt",header = T)
+pair = read.table("/Users/zeidh/Desktop/THESIS/Metrics/qualitiyMetricsAllLibraries_pe_se.txt",header = T)
 
 #######################################################
 ####     Workflow Part 5: Plot Pairs      ###
@@ -9,12 +9,14 @@ library(dplyr)
 library("ggplot2")
 # Load ggplot2 package
 
-
+merge =  pair[sample(nrow(pair), 200), ]
 	
-	merge=filter(pair, quality_manual != "E")
+	#merge=filter(pair, quality_manual != "E")
 	merge$quality<-as.factor(droplevels(merge$quality_manual))
+	colnames(merge)=c("file" ,"quality_manual","coverage","spikiness", "evenness" ,"evenness.med",
+					  "end" ,"background" ,"reads.per.mb.bpr" ,"coverage.bpr" ,"gene" ,"quality"   )
 	merge$quality
-	my_cols=c("#32a852","#c98d26")
+	my_cols=c("#c92626", "#32a852","#c98d26")
 	
 	panel.cor <- function(x, y){
 		usr <- par("usr"); on.exit(par(usr))
@@ -26,7 +28,7 @@ library("ggplot2")
 	}
 	# Customize upper panel
 	upper.panel<-function(x, y){
-		points(x,y, pch = 19, col = my_cols[merge$quality])
+		points(x,y, pch = 21, bg = my_cols[merge$quality],cex=1.4)
 	}
 	
 	panel.hist <- function(x, ...)
@@ -40,9 +42,9 @@ library("ggplot2")
 	}
 	
 	# Create the plots
-	pairs(merge[, c("coverage","spikiness" , "evenness.mean" , "background" )],
+	pairs(merge[, c("coverage","spikiness" , "evenness" , "background" )],
 		  lower.panel = panel.cor,
 		  upper.panel = upper.panel,
-		  diag.panel = panel.hist) 
-	
+		  diag.panel = panel.hist)
+	jpeg(filename = "Output/pairs.png")
 	

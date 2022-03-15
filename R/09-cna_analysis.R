@@ -24,8 +24,6 @@ suppressMessages(suppressPackageStartupMessages(suppressWarnings(require(AneuFin
 ####   Assemble datasets   ####
 ######################################################################
 
-cutoff=1000
-file = "/Users/zeidh/Desktop/binsize_1e+06_PE_CNV.bed.gz"
 
 copyNumberFinder <- function(cutoff, file){
 	
@@ -99,12 +97,16 @@ copyNumberFinder <- function(cutoff, file){
 		}
 	}
 	
-	write.table(cnvPerCell,file = paste0("/Users/zeidh/Desktop/THESIS/CNAs/",cutoff/10000,"cnvPerCell.txt"),quote = F,row.names = F,col.names = T,sep = "\t")
-	write.table(cnvPerCellSummary,paste0("/Users/zeidh/Desktop/THESIS/CNAs/",cutoff/10000,"cnvPerCellSummary.txt"),quote = F,row.names = F,col.names = T,sep = "\t")
+	write.table(cnvPerCell,file = "/Users/zeidh/Desktop/THESIS/CNAs/20Mb_cnvPerCell.txt",quote = F,row.names = F,col.names = T,sep = "\t")
+	write.table(cnvPerCellSummary,file="/Users/zeidh/Desktop/THESIS/CNAs/20Mb_cnvPerCellSummary.txt",quote = F,row.names = F,col.names = T,sep = "\t")
 	
 }
 
-copyNumberFinder(10000000,file)
+file = "/Users/zeidh/Desktop/THESIS/CNAs/Aneufinder/binsize_1e+06_PE_CNV.bed.gz"
+copyNumberFinder(20000000,file)
+
+file = "/Users/zeidh/Desktop/THESIS/CNAs/Aneufinder/binsize_1e+06_SE_CNV.bed.gz"
+copyNumberFinder(20000000,file)
 
 
 
@@ -112,27 +114,100 @@ copyNumberFinder(10000000,file)
 ####   Duplications   ####
 ######################################################################
 
-cnvPerCell=read.table("/Users/zeidh/Desktop/THESIS/CNAs/1000cnvPerCell.txt",header=T)
+cnvPerCell1=read.table("/Users/zeidh/Desktop/THESIS/CNAs/20Mb_pe_cnvPerCell.txt",header=T)
+cnvPerCell2=read.table("/Users/zeidh/Desktop/THESIS/CNAs/20Mb_se_cnvPerCell.txt",header=T)
+
+cnvPerCell=rbind(cnvPerCell1,cnvPerCell2)
+
 gains <- dplyr::filter(cnvPerCell,cnvPerCell$type=="gain")
 gains$file<-as.factor(gains$file)
 
+mergeOverlapping <- function(x, y, minfrac=0.6) {
+	hits <- findOverlaps(x, y)
+	xhits <- x[queryHits(hits)]
+	yhits <- y[subjectHits(hits)]
+	frac <- width(pintersect(xhits, yhits)) / pmin(width(xhits), width(yhits))
+	merge <- frac >= minfrac
+	c(reduce(c(xhits[merge], yhits[merge])),
+	  xhits[!merge], yhits[!merge],
+	  x[-queryHits(hits)], y[-subjectHits(hits)])
+}
 
 cnvpath=paste0("/Users/zeidh/Desktop/THESIS/CNAs/Duplications/")
 if (!file.exists(cnvpath) ) { dir.create(cnvpath)}
 
-chr=levels(droplevels(gains$seqnames))[1]
+chr=levels(droplevels(gains$seqnames))[10]
 for (chr in levels(droplevels(gains$seqnames)) ){
 	filepath=paste0(cnvpath,"/",chr,"/")
 	if (!file.exists(filepath) ) { dir.create(filepath)}
 	
 	breaks = filter(gains,seqnames==chr)
-	if (nrow(breaks)>50){
-		#breakpointR::plotBreakpoints(files2plot = paste0("/Users/zeidh/Desktop/THESIS/BPR/data_pe//",levels(droplevels(breaks$file)),".RData"))
-		plotBreakpointsPerChr2.0(files2plot = paste0("/Users/zeidh/Desktop/THESIS/BPR/data_pe//",levels(droplevels(breaks$file)),".RData")[1:50], plotspath = filepath,chromosomes = chr)
+	
+	for (i in 1:nrow(breaks)){
+		tmp1=GRanges(breaks[i,])
+		tmp2=GRanges(breaks[-i,])
+		mergeOverlapping(x=tmp1,y=tmp2,minfrac = 0.9)
+	}
+	
+	
+	breaks$library <- breaks$file
+	suppressWarnings(breaks <- breaks %>% separate(library, c("a","b","c","d","e","f"), "[_-]+"))
+	breaks$gene <- "gene"
+	for (row in 1:nrow(breaks)){
+		
+		for (letter in c("a","b","c","d","e","f")){
+			if (is.na(breaks[row,letter])!=T){
+				if (breaks[row,letter]=="WT" | breaks[row,letter]=="wt"){
+					breaks[row,"gene"]="WT"
+				}
+				else if (breaks[row,letter]=="blm" | breaks[row,letter]=="BLM"  | breaks[row,letter]=="blm1" ) {
+					breaks[row,"gene"]="BLM"
+				}
+				else if (breaks[row,letter]=="wrn"  ) {
+					if (breaks[row,"a"]=="recql5"){
+						breaks[row,"gene"]="WRN/RECQL5"
+					}
+					else{
+						breaks[row,"gene"]="WRN"
+					}
+				}
+				
+				else if (breaks[row,letter]=="RECQL5" | breaks[row,letter]=="recql5" | breaks[row,letter]=="RECQ5" | breaks[row,letter]=="recq5" ) {
+					if (breaks[row,"gene"]=="BLM"){
+						breaks[row,"gene"]="BLM/RECQL5"
+					}
+					else{
+						breaks[row,"gene"]="RECQL5"
+					}
+				}
+				else if (breaks[row,letter]=="blmrecq5"){
+					breaks[row,"gene"]="BLM/RECQL5"
+				}				
+				else if (breaks[row,letter]=="RECQL1"| breaks[row,letter]=="recql1"){
+					breaks[row,"gene"]="RECQL1"
+				}
+				else if ( breaks[row,letter]=="fucciwt"| breaks[row,letter]=="kbm7" | breaks[row,letter]=="wtfucci" ){
+					breaks[row,"gene"]="WT"
+				}
+				else if (breaks[row,letter]=="RTEL"| breaks[row,letter]=="rtel"){
+					breaks[row,"gene"]="RTEL1"
+				}
+			}
 		}
 		
-	else 
-		{plotBreakpointsPerChr2.0(files2plot = paste0("/Users/zeidh/Desktop/THESIS/BPR/data_pe//",levels(droplevels(breaks$file)),".RData"), plotspath = filepath,chromosomes = chr)}
+	}
+	breaks <- select(breaks,-c(a,b,c,d,e,f))
+	breaks$gene=as.factor(breaks$gene)
+	
+	if (!"WT" %in% levels(droplevels(breaks$gene))){
+		if (nrow(breaks)>50){
+			#breakpointR::plotBreakpoints(files2plot = paste0("/Users/zeidh/Desktop/THESIS/BPR/data_pe//",levels(droplevels(breaks$file)),".RData"))
+			plotBreakpointsPerChr2.0(files2plot = paste0("/Users/zeidh/Desktop/THESIS/BPR/data/",levels(droplevels(breaks$file)),".RData")[1:50], plotspath = filepath,chromosomes = chr)
+			}
+		else 
+			{plotBreakpointsPerChr2.0(files2plot = paste0("/Users/zeidh/Desktop/THESIS/BPR/data/",levels(droplevels(breaks$file)),".RData"), plotspath = filepath,chromosomes = chr)}
+
+	}
 }
 
 for (chr in levels(droplevels(gains$seqnames)) ){

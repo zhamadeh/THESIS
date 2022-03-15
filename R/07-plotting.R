@@ -216,17 +216,22 @@ test=test[test$gene!="RTEL1",]
 pval= data.frame(gene=c("BLM"  ,"BLM/RECQL5", "RECQL1", "RECQL5", "WRN" , "WRN/RECQL5", "WT"),
 				 sig = c("***","***","ns","ns","***","*",""))
 
-ggplot(test) + geom_jitter(aes(gene,norm),alpha=0.8)+ geom_boxplot(aes(gene,norm),color="#d92323",width=0.1,coef = 10) +
+p=ggplot(test) + geom_jitter(aes(gene,norm),alpha=0.8)+ geom_boxplot(aes(gene,norm),color="#d92323",width=0.1,coef = 10) +
 	theme_classic()+
-	geom_text(data=pval,aes(x=gene,y=(max(test$norm)+5),label=sig)) +
+	#geom_text(data=pval,aes(x=gene,y=(max(test$norm)+5),label=sig)) +
 	theme(text=element_text(size=15),legend.position = "none")+
 	labs(x="RecQ Knockout",y="SCEs/Library")+
 	ggsave("Output/SCEs_per_libirary.png")
 
 
-my_comparisons <- list( c("WT", "RECQL5"), c("WT", "BLM/RECQL5"), c("WT", "BLM") ,c("WT", "RECQL1"),c("WT","RTEL1"),c("WT", "WRN"),c("WT", "WRN/RECQL5"))
+my_comparisons <- list( c("WT", "RECQL5"), c("WT", "BLM") ,c("WT", "RECQL1"),c("WT","RTEL1"),c("WT", "WRN"),c("WT", "WRN/RECQL5"), c("WT", "BLM/RECQL5"))
 
 
+df_p_val <- test %>% rstatix::t_test( norm ~ gene, comparisons = list( c("BLM","WT"),c("BLM","BLM/RECQL5"),c("BLM/RECQL5","WT"),c("WT", "RECQL1"),c("WT","RECQL5"),c("WRN","WT"),c("WT","WRN/RECQL5"))) %>% rstatix::add_xy_position()
+df_p_val$y.position = 50
+p1 <- p + add_pvalue(df_p_val,label = "p.adj.signif",label.size=3,step.increase = 0.06,tip.length = 0)
+p1
+p1+ggsave("Output/SCEs_per_libirary.png")
 
 
 
@@ -240,7 +245,7 @@ suppressMessages(suppressWarnings(ggplot(breakpointSummary) + geom_smooth(aes(re
 								  	#scale_y_log10() +
 								  	theme_classic() +
 								  	theme(text=element_text(size=20))+
-								  	geom_hline(yintercept=10000, linetype="dashed", color = "red")+
+								  	geom_hline(yintercept=19215, linetype="dashed", color = "red")+
 								  	labs(x="Sequencing Effort (Reads/Mb)",y="SCE Breakpont Resoluton")+
 								  	ggsave("Output/resolution_vs_depth.png")))
 
@@ -267,7 +272,7 @@ ggplot(breakpointSummary) + stat_ecdf(aes(width,group=gene),size=0.3,color="#949
 	ylab("SCEs Mapped (%)") +
 	xlab("Resolution") +
 	annotation_logticks(sides = "b") +
-	theme(text = element_text(size=15))+
+	theme(text = element_text(size=20))+
 	geom_density(aes(width),size=1,color="#565c7a")+
 	guides(group="none")+
 	geom_vline(xintercept=median(breakpointSummary$width), linetype="dashed", color = "red") +
