@@ -2,6 +2,8 @@
 ########################################################################
 ################## SCEs from haploid and diploid cells ################
 ########################################################################
+library(tidyverse)
+library(ggpubr)
 
 fucci=read.table("SCEs/RESOLUTION/haploidSCEs_Resolution.txt",header=T)
 merge=read.table("SCEs/RESOLUTION/diploidSCEs_Resolution.txt",header=T)
@@ -12,14 +14,16 @@ merge$type=paste0("Diploid (n = ",nrow(merge),")")
 bind=rbind(fucci,merge)
 
 
-ggplot(bind)+geom_smooth(aes(reads.per.mb.bpr,width,color=type))+
+ggplot(bind)+geom_smooth(aes(reads.per.mb.bpr,width,color=type),se=T)+
 	theme_classic()+
+	#geom_point(aes(reads.per.mb.bpr,width,color=type))+
 	#geom_text(data=pval,aes(x=gene,y=(max(test$norm)+5),label=sig)) +
 	theme(text=element_text(size=15),legend.position = c(0.6,0.7))+
 	guides(color=guide_legend(title="Cell Ploidy"))+
 	labs(x="Sequencing Effort (Reads/Mb)",y="SCE Breakpoint Resolution")+
-	annotate(geom="text", x=200, y=9e+04, label=paste0("p = ",round(p_value,digits = 10)))+
+	annotate(geom="text", x=320, y=2e+05, label=paste0("p = ",round(p_value,digits = 10)))+
 	ggsave("Output/SCEs_hap_dip_resolution.png")
+
 
 
 ### https://stats.stackexchange.com/questions/435644/is-there-a-method-to-look-for-significant-difference-between-two-linear-regressi
